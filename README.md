@@ -1,2 +1,2 @@
 # aspnetcore-nhibernate
-Simple project to try ASP .NET Core with NHbibernate
+A simple API using ASP .NET Core and NHbibernate
