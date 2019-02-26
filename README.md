@@ -1,2 +1,2 @@
 # aspnetcore-nhibernate
-A simple API using ASP .NET Core and NHbibernate
+A simple API using ASP .NET Core and NHibernate
