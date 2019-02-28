@@ -5,11 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="NHibernateMappings\Customer.hbm.xml" />
+    <None Remove="NHibernateMappings\Customer.xml" />
+    <None Remove="NHibernateMappings\Order.xml" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="NHibernateMappings\Customer.hbm.xml" />
+    <EmbeddedResource Include="NHibernateMappings\Customer.xml" />
+    <EmbeddedResource Include="NHibernateMappings\Order.xml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentNHibernate" Version="2.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="NHibernate" Version="5.2.3" />

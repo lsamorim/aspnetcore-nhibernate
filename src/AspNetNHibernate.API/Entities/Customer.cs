@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace AspNetNHibernate.API.Entities
 {
@@ -14,9 +15,22 @@ namespace AspNetNHibernate.API.Entities
 
         public virtual LocationValueObject Address { get; set; }
 
+        public virtual ISet<Order> Orders { get; set; } = new HashSet<Order>(0);
+
         public override string ToString()
         {
-            return $"Id: {Id}\nFirstName: {FirstName}\nLastName: {LastName}\nPoints: {Points}\nHasGoldStatus: {HasGoldStatus}\nMemberSince: {MemberSince}\nCreditCardRating: {CreditRating.ToString()}\nAddress: {Address}";
+            int totalOrders = Orders == null ? 0 : Orders.Count;
+            string ordersString = string.Empty;
+
+            if (totalOrders > 0)
+            {
+                foreach(var o in Orders)
+                {
+                    ordersString += $"{{\n{o.ToString()}\n}}\n";
+                }
+            }
+
+            return $"Id: {Id}\nFirstName: {FirstName}\nLastName: {LastName}\nPoints: {Points}\nHasGoldStatus: {HasGoldStatus}\nMemberSince: {MemberSince}\nCreditCardRating: {CreditRating.ToString()}\nAddress: {Address}\nOrders [{totalOrders}]>\n{ordersString}";
         }
     }
 

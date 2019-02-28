@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using AspNetNHibernate.API.Entities;
+using FluentNHibernate.Cfg;
+using FluentNHibernate.Cfg.Db;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -31,68 +33,138 @@ namespace AspNetNHibernate.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var cfg = new Configuration();
-            cfg.DataBaseIntegration(x =>
-            {
-                x.ConnectionString = Configuration.GetConnectionString("NHibernateFundConnectionString");
-                x.Driver<SqlClientDriver>();
-                x.Dialect<MsSql2012Dialect>();
-                x.LogSqlInConsole = true;
-                x.BatchSize = 10;
-            });
-            cfg.AddAssembly(Assembly.GetExecutingAssembly());
+            //var cfg = new Configuration();
+            //cfg.DataBaseIntegration(x =>
+            //{
+            //    x.ConnectionString = Configuration.GetConnectionString("NHibernateFundConnectionString");
+            //    x.Driver<SqlClientDriver>();
+            //    x.Dialect<MsSql2012Dialect>();
+            //    x.LogSqlInConsole = true;
+            //    //x.BatchSize = 10;
+            //});
+            //cfg.AddAssembly(Assembly.GetExecutingAssembly());
 
-            var sessionFactory = cfg.BuildSessionFactory();
+            //var sessionFactory = cfg.BuildSessionFactory();
+
+            var sessionFactory = CreateSessionFactory();
+
+            var customer = CreateCustomer(sessionFactory);
+
+            LoadCustomer(sessionFactory, customer.Id);
+
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+        }
+
+        private ISessionFactory CreateSessionFactory()
+        {
+            return Fluently.Configure()
+              .Database(
+                MsSqlConfiguration.MsSql2012
+                  .ConnectionString(Configuration.GetConnectionString("NHibernateFundConnectionString"))
+              )
+              .Mappings(m =>
+                m.FluentMappings.AddFromAssemblyOf<Program>())
+              .BuildSessionFactory();
+        }
+
+        private Customer CreateCustomer(ISessionFactory sessionFactory)
+        {
+            Customer customer;
             using (var session = sessionFactory.OpenSession())
             {
                 using (var tx = session.BeginTransaction())
                 {
-                    for (int i = 0; i < 25; i++)
+                    customer = NewCustomer();
+                    Console.WriteLine("*** NEW CUSTOMER [BEFORE] ***");
+                    Console.WriteLine(customer);
+                    session.Save(customer);
+                    foreach (var order in customer.Orders)
                     {
-                        var customer = NewCustomer();
-                        session.Save(customer);
+                        order.Customer = customer;
+                        session.Save(order);
                     }
-
+                    
                     tx.Commit();
                 }
             }
 
+            return customer;
+        }
+
+        private IEnumerable<Customer> LoadCustomers(ISessionFactory sessionFactory)
+        {
+            IEnumerable<Customer> customers;
             using (var session = sessionFactory.OpenSession())
             {
                 using (var tx = session.BeginTransaction())
                 {
-                    var customers = session.Query<Customer>()
+                    customers = session.Query<Customer>()
                         .Where(x => x.Points > 0)
                         .OrderBy(x => x.Points)
                         .Select(x => x);
 
+                    Console.WriteLine($"***** CUSTOMERS LOADED *****\n");
                     foreach (var c in customers)
                     {
-                        Console.WriteLine($"NHibernate: {c.ToString()}");
+                        Console.WriteLine($"{c}\n");
                     }
                 }
             }
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            return customers;
+        }
+
+        private Customer LoadCustomer(ISessionFactory sessionFactory, Guid id)
+        {
+            Customer customer;
+            using (var session = sessionFactory.OpenSession())
+            {
+                using (var tx = session.BeginTransaction())
+                {
+                    customer = session.Load<Customer>(id);
+                    //Console.WriteLine("*** CUSTOMER RELOADED ***");
+                    //Console.WriteLine(customer);
+
+                    Console.WriteLine("*** The orders are of: ***");
+                    var customerName = (customer.Orders != null) ? customer.Orders.First().Customer.FirstName : "no orders associated";
+                    Console.WriteLine(customerName);
+                }
+            }
+
+            return customer;
         }
 
         private Customer NewCustomer()
         {
             return new Customer
             {
-                FirstName = "Lucas",
-                LastName = "Amorim",
+                FirstName = "John",
+                LastName = "Augusto",
                 MemberSince = DateTime.UtcNow,
-                Points = 100,
-                HasGoldStatus = true,
-                CreditRating = CustomerCreditRating.Good,
-                Address = new LocationValueObject
+                Points = 90,
+                HasGoldStatus = false,
+                CreditRating = CustomerCreditRating.Neutral,
+                Address = NewLocation(),
+                Orders =
                 {
-                    Street = "Rua Dr. Paulo Fróes Machado, 160",
-                    City = "Nova Iguaçu",
-                    Province = "RJ",
-                    Country = "BR"
+                    new Order(),
+                    new Order
+                    {
+                        Shipped = DateTime.UtcNow,
+                        ShipTo = NewLocation()
+                    }
                 }
+            };
+        }
+
+        private LocationValueObject NewLocation()
+        {
+            return new LocationValueObject
+            {
+                Street = "Rua Dr. Paulo Fróes Machado, 160",
+                City = "Nova Iguaçu",
+                Province = "RJ",
+                Country = "BR"
             };
         }
 
