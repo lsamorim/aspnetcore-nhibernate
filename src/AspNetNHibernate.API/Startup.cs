@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using AspNetNHibernate.API.Entities;
-using HibernatingRhinos.Profiler.Appender.NHibernate;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -35,33 +34,66 @@ namespace AspNetNHibernate.API
             var cfg = new Configuration();
             cfg.DataBaseIntegration(x =>
             {
-                x.ConnectionString = Configuration.GetConnectionString("DutchConnectionString");
+                x.ConnectionString = Configuration.GetConnectionString("NHibernateFundConnectionString");
                 x.Driver<SqlClientDriver>();
                 x.Dialect<MsSql2012Dialect>();
                 x.LogSqlInConsole = true;
+                x.BatchSize = 10;
             });
             cfg.AddAssembly(Assembly.GetExecutingAssembly());
+
             var sessionFactory = cfg.BuildSessionFactory();
             using (var session = sessionFactory.OpenSession())
             {
                 using (var tx = session.BeginTransaction())
                 {
-                    var products = session.Query<Products>()
-                        .Where(x => x.Price < 1000)
-                        .OrderBy(x => x.Title)
-                        .Select(x => x);
-
-                    foreach(var p in products)
+                    for (int i = 0; i < 25; i++)
                     {
-                        Console.WriteLine($"{p.Id} - {p.Title}");
+                        var customer = NewCustomer();
+                        session.Save(customer);
                     }
-                    
 
                     tx.Commit();
                 }
             }
 
+            using (var session = sessionFactory.OpenSession())
+            {
+                using (var tx = session.BeginTransaction())
+                {
+                    var customers = session.Query<Customer>()
+                        .Where(x => x.Points > 0)
+                        .OrderBy(x => x.Points)
+                        .Select(x => x);
+
+                    foreach (var c in customers)
+                    {
+                        Console.WriteLine($"NHibernate: {c.ToString()}");
+                    }
+                }
+            }
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+        }
+
+        private Customer NewCustomer()
+        {
+            return new Customer
+            {
+                FirstName = "Lucas",
+                LastName = "Amorim",
+                MemberSince = DateTime.UtcNow,
+                Points = 100,
+                HasGoldStatus = true,
+                CreditRating = CustomerCreditRating.Good,
+                Address = new LocationValueObject
+                {
+                    Street = "Rua Dr. Paulo Fróes Machado, 160",
+                    City = "Nova Iguaçu",
+                    Province = "RJ",
+                    Country = "BR"
+                }
+            };
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

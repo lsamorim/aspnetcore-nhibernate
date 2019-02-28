@@ -5,11 +5,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="NHibernateMappings\Product.hbm.xml" />
+    <None Remove="NHibernateMappings\Customer.hbm.xml" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="NHibernateMappings\Product.hbm.xml" />
+    <EmbeddedResource Include="NHibernateMappings\Customer.hbm.xml" />
   </ItemGroup>
 
   <ItemGroup>

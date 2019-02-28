@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2"
+                   assembly="AspNetNHibernate.API"
+                   namespace="AspNetNHibernate.API.Entities">
+  <class name="Customer">
+    <id name="Id">
+      <!--<generator class="native"/>-->
+      <generator class="guid.comb"/>
+    </id>
+    <property name="FirstName"/>
+    <property name="LastName"/>
+    <property name="Points"/>
+    <property name="HasGoldStatus"/>
+    <property name="MemberSince" type="UtcDateTime"/>
+    <property name="CreditRating" type="CustomerCreditRatingType"/>
+
+    <component name="Address">
+      <property name="Street"/>
+      <property name="City"/>
+      <property name="Province"/>
+      <property name="Country"/>
+    </component>
+  </class>
+</hibernate-mapping>
